@@ -417,7 +417,7 @@ class PanoViewer extends Component<PanoViewerEvent> {
         onDeviceMotionChange = deviceMotion => {
           const isGyroSensorAvailable = !(deviceMotion.rotationRate.alpha == null);
 
-          if(isGyroSensorAvailable) {
+          if (isGyroSensorAvailable) {
             res(isGyroSensorAvailable);
           }
         };
