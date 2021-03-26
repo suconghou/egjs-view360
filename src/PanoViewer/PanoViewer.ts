@@ -426,7 +426,10 @@ class PanoViewer extends Component<PanoViewerEvent> {
         // 2. IOS need https to use this api
         onDeviceOrientationChange = deviceOrientation => {
           const isGyroSensorAvailable = Boolean(deviceOrientation.alpha);
-          res(isGyroSensorAvailable)
+          if (isGyroSensorAvailable) {
+            // alpha beta gamma may be 0 on first callback on some phone
+            res(isGyroSensorAvailable)
+          }
         };
 
         window.addEventListener("devicemotion", onDeviceMotionChange);
@@ -499,7 +502,7 @@ class PanoViewer extends Component<PanoViewerEvent> {
    * });
    * ```
    */
-  public setVideo(video: string | HTMLElement | { type : string; src: string; }, param: Partial<{
+  public setVideo(video: string | HTMLElement | { type: string; src: string; }, param: Partial<{
     projectionType: PanoViewer["_projectionType"];
     cubemapConfig: PanoViewer["_cubemapConfig"];
     stereoFormat: PanoViewer["_stereoFormat"];
@@ -783,7 +786,7 @@ class PanoViewer extends Component<PanoViewerEvent> {
     this._aspectRatio = width / height;
     this._photoSphereRenderer!.updateViewportDimensions(width, height);
     this._yawPitchControl!.option("aspectRatio", this._aspectRatio);
-    this._yawPitchControl!.updatePanScale({height});
+    this._yawPitchControl!.updatePanScale({ height });
 
     this.lookAt({}, 0);
     return this;
@@ -900,7 +903,7 @@ class PanoViewer extends Component<PanoViewerEvent> {
       fov = verticalAngleOfImage;
     }
 
-    this._yawPitchControl!.lookAt({yaw, pitch, fov}, duration);
+    this._yawPitchControl!.lookAt({ yaw, pitch, fov }, duration);
 
     if (duration === 0) {
       this._photoSphereRenderer!.renderWithYawPitch(yaw, pitch, fov);
@@ -1036,11 +1039,11 @@ class PanoViewer extends Component<PanoViewerEvent> {
         "pitchRange": [-maxFov / 2, maxFov / 2],
         "fovRange": [minFov, maxFov]
       });
-      this.lookAt({fov: maxFov});
+      this.lookAt({ fov: maxFov });
     }
   }
 
-  private	_bindRendererHandler() {
+  private _bindRendererHandler() {
     this._photoSphereRenderer!.on(PanoImageRenderer.EVENTS.ERROR, e => {
       this.trigger(EVENTS.ERROR, e);
     });
