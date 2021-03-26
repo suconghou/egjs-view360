@@ -55,7 +55,7 @@ class SphereRenderer extends Renderer {
   }
 
   public render(ctx: Parameters<Renderer["render"]>[0]) {
-    const {gl, shaderProgram} = ctx;
+    const { gl, shaderProgram } = ctx;
 
     let leftEyeScaleOffset: number[];
     let rightEyeScaleOffset: number[];
@@ -134,8 +134,20 @@ void main(void) {
       return;
     }
 
+    let forceDimension;
+    // fix bug iphone12 / IOS 14 m3u8 video webgl bug , https://bugs.webkit.org/show_bug.cgi?id=215908 , https://github.com/naver/egjs-view360/issues/355
+    if (image instanceof HTMLVideoElement && image.src.includes("m3u8")) {
+      if (navigator.userAgent.includes("iPhone OS 14")) {
+        forceDimension = { width, height }
+      }
+    }
+
     // Pixel Source for IE11 & Video
-    this._initPixelSource(image);
+    if (forceDimension) {
+      this._initPixelSource(image, forceDimension);
+    } else {
+      this._initPixelSource(image);
+    }
 
     gl.activeTexture(gl.TEXTURE0);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
