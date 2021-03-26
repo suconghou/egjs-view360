@@ -410,16 +410,25 @@ class PanoViewer extends Component<PanoViewerEvent> {
     }
 
     let onDeviceMotionChange;
+    let onDeviceOrientationChange;
 
     function checkGyro() {
       return new Promise((res, rej) => {
         onDeviceMotionChange = deviceMotion => {
           const isGyroSensorAvailable = !(deviceMotion.rotationRate.alpha == null);
 
-          res(isGyroSensorAvailable);
+          isGyroSensorAvailable && res(isGyroSensorAvailable);
+        };
+        // Redmi 6 Android 9 & iPhone 7 Plus IOS 13.4.1 does not has a deviceMotion.rotationRate.alpha, but does support gyro sensor, we should use *deviceorientation* for more exactly check
+        // also notice 1. on IOS13+ this not work before we call window.DeviceOrientationEvent.requestPermission
+        // 2. IOS need https to use this api
+        onDeviceOrientationChange = deviceOrientation => {
+          const isGyroSensorAvailable = Boolean(deviceOrientation.alpha);
+          res(isGyroSensorAvailable)
         };
 
         window.addEventListener("devicemotion", onDeviceMotionChange);
+        window.addEventListener("deviceorientation",onDeviceOrientationChange);
       });
     }
 
@@ -431,6 +440,7 @@ class PanoViewer extends Component<PanoViewerEvent> {
 
     Promise.race([checkGyro(), timeout()]).then((isGyroSensorAvailable: boolean) => {
       window.removeEventListener("devicemotion", onDeviceMotionChange);
+      window.removeEventListener("deviceorientation",onDeviceOrientationChange);
 
       if (callback) {
         callback(isGyroSensorAvailable);
