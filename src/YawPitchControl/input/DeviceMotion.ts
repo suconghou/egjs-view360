@@ -34,7 +34,7 @@ export default class DeviceMotion extends Component<{
     this._onDeviceOrientation = this._onDeviceOrientation.bind(this);
     this._onChromeWithoutDeviceMotion = this._onChromeWithoutDeviceMotion.bind(this);
 
-    this.isWithoutDeviceMotion = IS_CHROME_WITHOUT_DEVICE_MOTION;
+    this.isWithoutDeviceMotion = IS_CHROME_WITHOUT_DEVICE_MOTION || navigator.userAgent.includes('Redmi 6 Build/PPR1.1806') || navigator.userAgent.includes('iPhone OS 13_4_1');
     this.isAndroid = IS_ANDROID;
 
     this.stillGyroVec = vec3.create();
