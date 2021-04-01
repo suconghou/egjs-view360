@@ -137,12 +137,24 @@ void main(void) {
     // fix bug iphone12 / IOS 14 m3u8 video webgl bug , https://bugs.webkit.org/show_bug.cgi?id=215908 , https://github.com/naver/egjs-view360/issues/355
     if (image instanceof HTMLVideoElement && (image.src.includes("m3u8") || image.currentSrc.includes('m3u8'))) {
       if (navigator.userAgent.includes("iPhone OS 14")) {
-        let h = height, w = width;
-        if (width > 2000 || height > 1000) {
-          h = 1000
-          w = width * h / height;
+        const pixw = window.devicePixelRatio * window.screen.width
+        const pixh = window.devicePixelRatio * window.screen.height
+        const ip12 = [
+          [2532, 1170],
+          [2340, 1080],
+          [2778, 1284],
+        ];
+        const isIphone12 = ip12.some(([h, w]) => {
+          return pixw === w && pixh === h;
+        })
+        if (isIphone12) {
+          let h = height, w = width;
+          if (width > 3000 || height > 1500) {
+            h = 1500
+            w = width * h / height;
+          }
+          forceDimension = { width: w, height: h }
         }
-        forceDimension = { width: w, height: h }
       }
     }
 
