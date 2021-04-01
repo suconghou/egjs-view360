@@ -27,6 +27,12 @@ export default class DeviceMotion extends Component<{
 
   private _timer: number;
   private _isEnabled: boolean;
+  private moothFactor: number = 6;
+
+  private _alpha: number
+  private _beta: number
+  private _gamma: number
+
 
   constructor() {
     super();
@@ -67,15 +73,30 @@ export default class DeviceMotion extends Component<{
     this._isEnabled = false;
   }
 
+  private _mooth(x: number, lx: number) {
+    if (!lx) {
+      return x
+    }
+    if (Math.abs(lx - x) > 10) {
+      return x
+    }
+    return lx + (x - lx) / this.moothFactor;
+  }
+
   private _onChromeWithoutDeviceMotion(e: DeviceOrientationEvent) {
-    let {alpha, beta, gamma} = e;
+    let { alpha, beta, gamma } = e;
 
     // There is deviceorientation event trigged with empty values
     // on Headless Chrome.
-    if (alpha === null) {
+    if (alpha === null || beta === null || gamma === null) {
       return;
     }
-
+    alpha = this._mooth(alpha, this._alpha)
+    this._alpha = alpha
+    beta = this._mooth(beta, this._beta);
+    this._beta = beta
+    gamma = this._mooth(gamma, this._gamma);
+    this._gamma = gamma
     // convert to radian
     alpha = (alpha || 0) * Math.PI / 180;
     beta = (beta || 0) * Math.PI / 180;
@@ -114,7 +135,7 @@ export default class DeviceMotion extends Component<{
       return;
     }
 
-    const devicemotionEvent = {...e} as Mutable<DeviceMotionEvent>;
+    const devicemotionEvent = { ...e } as Mutable<DeviceMotionEvent>;
 
     devicemotionEvent.interval = e.interval;
     devicemotionEvent.timeStamp = e.timeStamp;
@@ -147,7 +168,8 @@ export default class DeviceMotion extends Component<{
       (devicemotionEvent as any).adjustedRotationRate = {
         alpha: this.adjustedGyroVec[0],
         beta: this.adjustedGyroVec[1],
-        gamma: this.adjustedGyroVec[2]};
+        gamma: this.adjustedGyroVec[2]
+      };
     }
 
     this.trigger("devicemotion", {
