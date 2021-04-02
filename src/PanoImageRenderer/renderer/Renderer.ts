@@ -109,7 +109,7 @@ abstract class Renderer extends Component<{
     const isIE11Video = isIE11 && (image instanceof HTMLVideoElement);
 
     if (isIE11Video || forceDimension) {
-      const {width, height} = forceDimension || this.getDimension(image);
+      const { width, height } = forceDimension || this.getDimension(image);
 
       this._pixelCanvas = document.createElement("canvas");
       this._pixelCanvas.width = width;
@@ -120,7 +120,7 @@ abstract class Renderer extends Component<{
   }
 
   protected _getPixelSource(image: HTMLImageElement | HTMLVideoElement) {
-    if (!this._pixelCanvas) {
+    if (!this._pixelCanvas || !this._pixelContext) {
       return image;
     }
 
@@ -141,11 +141,12 @@ abstract class Renderer extends Component<{
     }
 
     if (this._forceDimension) {
-      this._pixelContext!.drawImage(image,
+      this._pixelContext.drawImage(image,
         0, 0, contentDimension.width, contentDimension.height,
         0, 0, textureDimension.width, textureDimension.height);
+      return this._pixelContext.getImageData(0, 0, textureDimension.width, textureDimension.height)
     } else {
-      this._pixelContext!.drawImage(image, 0, 0);
+      this._pixelContext.drawImage(image, 0, 0);
     }
 
     return this._pixelCanvas;

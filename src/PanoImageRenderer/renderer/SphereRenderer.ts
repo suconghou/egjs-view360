@@ -148,12 +148,7 @@ void main(void) {
           return pixw === w && pixh === h;
         })
         if (isIphone12) {
-          let h = height, w = width;
-          if (width > 3000 || height > 1500) {
-            h = 1500
-            w = width * h / height;
-          }
-          forceDimension = { width: w, height: h }
+          forceDimension = { width, height }
         }
       }
     }
