@@ -275,7 +275,7 @@ class YawPitchControl extends Component<YawPitchControlEvents> {
   public getQuaternion() {
     const pos = this.axes.get();
 
-    return this._deviceQuaternion!.getCombinedQuaternion(pos.yaw);
+    return this._deviceQuaternion!.getCombinedQuaternion(pos.yaw, pos.pitch);
   }
 
   public shouldRenderWithQuaternion() {
@@ -389,10 +389,8 @@ class YawPitchControl extends Component<YawPitchControlEvents> {
     const axes = this.axes;
     const isVR = options.gyroMode === GYRO_MODE.VR;
     const isYawPitch = options.gyroMode === GYRO_MODE.YAWPITCH;
-    // If it's VR mode, restrict user interaction to yaw direction only
-    const touchDirection = isVR ?
-      (TOUCH_DIRECTION_YAW & options.touchDirection) :
-      options.touchDirection;
+    // If it's VR mode, --restrict user interaction to yaw direction only-- , also full control
+    const touchDirection = options.touchDirection;
 
     // If one of below is changed, call updateControlScale()
     if (keys.some(key =>
@@ -664,7 +662,7 @@ class YawPitchControl extends Component<YawPitchControlEvents> {
     };
 
     if (opt.gyroMode === GYRO_MODE.VR && this._deviceQuaternion) {
-      event.quaternion = this._deviceQuaternion.getCombinedQuaternion(pos.yaw);
+      event.quaternion = this._deviceQuaternion.getCombinedQuaternion(pos.yaw, pos.pitch);
     }
     this.trigger("change", event);
   }
