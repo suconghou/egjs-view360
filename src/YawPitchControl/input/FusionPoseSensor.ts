@@ -65,7 +65,11 @@ export default class FusionPoseSensor extends Component<{
 
     // Set the filter to world transform, depending on OS.
     if (this.isIOS) {
-      this.filterToWorldQ.setFromAxisAngle(new MathUtil.Vector3(1, 0, 0), Math.PI / 2);
+      if (this.deviceMotion!.isHackedDevices){
+        this.filterToWorldQ.setFromAxisAngle(new MathUtil.Vector3(1, 0, 0), -Math.PI / 2);
+      }else{
+        this.filterToWorldQ.setFromAxisAngle(new MathUtil.Vector3(1, 0, 0), Math.PI / 2);
+      }
     } else {
       this.filterToWorldQ.setFromAxisAngle(new MathUtil.Vector3(1, 0, 0), -Math.PI / 2);
     }

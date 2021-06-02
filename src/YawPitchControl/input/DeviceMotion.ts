@@ -19,6 +19,7 @@ export default class DeviceMotion extends Component<{
 }> {
   public readonly isWithoutDeviceMotion: boolean;
   public readonly isAndroid: boolean;
+  public readonly isHackedDevices: boolean;
 
   public stillGyroVec: vec3;
   public rawGyroVec: vec3;
@@ -39,8 +40,10 @@ export default class DeviceMotion extends Component<{
     this._onDeviceMotion = this._onDeviceMotion.bind(this);
     this._onDeviceOrientation = this._onDeviceOrientation.bind(this);
     this._onChromeWithoutDeviceMotion = this._onChromeWithoutDeviceMotion.bind(this);
+    const isHackedDevices = navigator.userAgent.includes('iPhone OS 13_4_1');// iphone 7 plus on iPhone OS 13_4_1,加速度不行,旋转也有问题,特殊判断
+    this.isHackedDevices = isHackedDevices
 
-    this.isWithoutDeviceMotion = IS_CHROME_WITHOUT_DEVICE_MOTION || navigator.userAgent.includes('Redmi 6 Build/PPR1.1806') || navigator.userAgent.includes('iPhone OS 13_4_1');
+    this.isWithoutDeviceMotion = IS_CHROME_WITHOUT_DEVICE_MOTION || navigator.userAgent.includes('Redmi 6 Build/PPR1.1806') || isHackedDevices;
     this.isAndroid = IS_ANDROID;
 
     this.stillGyroVec = vec3.create();
