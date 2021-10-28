@@ -279,7 +279,7 @@ class YawPitchControl extends Component<YawPitchControlEvents> {
   }
 
   public shouldRenderWithQuaternion() {
-    return this.options.gyroMode === GYRO_MODE.VR;
+    return this.options.gyroMode === GYRO_MODE.VR && this._deviceQuaternion;
   }
 
   /**
