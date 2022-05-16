@@ -1,3 +1,4 @@
+// eslint-disable-next-line max-classes-per-file
 import {expect} from "chai";
 import sinon from "sinon";
 import {mat4} from "gl-matrix";
@@ -10,7 +11,7 @@ import PanoImageRendererForUnitTest from "../PanoImageRendererForUnitTest";
 import {compare, createPanoImageRenderer, renderAndCompareSequentially, isVideoLoaded, createVideoElement, sandbox, cleanup} from "../util";
 import WebGLUtils from "../../../src/PanoImageRenderer/WebGLUtils";
 import TestHelper from "../YawPitchControl/testHelper";
-import {PROJECTION_TYPE} from "../../../src/PanoViewer/consts";
+import {PROJECTION_TYPE, DEFAULT_CANVAS_CLASS} from "../../../src/PanoViewer/consts";
 
 const RendererOnIE11 = RendererInjector(
 	{
@@ -163,7 +164,7 @@ describe("PanoImageRenderer", () => {
 			sourceImg.src = "./images/test_equi.jpg";
 
 			// When
-			const inst = new MockedPanoImageRenderer(sourceImg, 200, 200, false, {
+			const inst = new MockedPanoImageRenderer(sourceImg, 200, 200, false, document.createElement("div"), DEFAULT_CANVAS_CLASS, {
 				initialYaw: 0,
 				initialpitch: 0,
 				imageType: "equirectangular",
@@ -188,7 +189,7 @@ describe("PanoImageRenderer", () => {
 			sourceImg.src = "./images/test_equi.jpg";
 
 			// When
-			const inst = new MockedPanoImageRenderer(sourceImg, 200, 200, false, {
+			const inst = new MockedPanoImageRenderer(sourceImg, 200, 200, false, document.createElement("div"), DEFAULT_CANVAS_CLASS, {
 				initialYaw: 0,
 				initialpitch: 0,
 				imageType: "equirectangular",
@@ -213,7 +214,7 @@ describe("PanoImageRenderer", () => {
 			sourceImg.src = "./images/test_equi.jpg";
 
 			// When
-			const inst = new MockedPanoImageRenderer(sourceImg, 200, 200, false, {
+			const inst = new MockedPanoImageRenderer(sourceImg, 200, 200, false, document.createElement("div"), DEFAULT_CANVAS_CLASS, {
 				initialYaw: 0,
 				initialpitch: 0,
 				imageType: "equirectangular",
@@ -675,6 +676,69 @@ describe("PanoImageRenderer", () => {
 				expect(result.success).to.be.equal(true);
 			});
 
+      IT("cubemap 3x2 - trim", async () => {
+				// Given
+				const sourceImg = new Image();
+
+				sourceImg.src = "./images/test_cube_3x2_small.png";
+
+				const inst_trim0 = createPanoImageRenderer(sourceImg, false, "cubemap", { trim: 0, order: "RLUDFB" });
+        const inst_trim2 = createPanoImageRenderer(sourceImg, false, "cubemap", { trim: 2, order: "RLUDFB" });
+
+        await Promise.all([
+          new Promise(res => inst_trim0.on("imageLoaded", res)),
+          new Promise(res => inst_trim2.on("imageLoaded", res))
+        ]);
+
+				// When
+				await inst_trim0.bindTexture();
+        await inst_trim2.bindTexture();
+
+				// Then
+				const result_trim0 = await renderAndCompareSequentially(
+					inst_trim0, [[135, -45, 30, `./images/PanoViewer/test_cube_trim_0${suffix}`, threshold]]
+				);
+
+        const result_trim2 = await renderAndCompareSequentially(
+					inst_trim2, [[135, -45, 30, `./images/PanoViewer/test_cube_trim_2${suffix}`, threshold]]
+				);
+
+				expect(result_trim0.success).to.be.equal(true);
+        expect(result_trim2.success).to.be.equal(true);
+			});
+
+			IT("cubestrip 3x2 - trim", async () => {
+				// Given
+				const sourceImg = new Image();
+
+				sourceImg.src = "./images/test_cube_3x2_small.png";
+        "RLUDFB"
+
+				const inst_trim0 = createPanoImageRenderer(sourceImg, false, "cubestrip", { trim: 0 });
+        const inst_trim2 = createPanoImageRenderer(sourceImg, false, "cubestrip", { trim: 2 });
+
+        await Promise.all([
+          new Promise(res => inst_trim0.on("imageLoaded", res)),
+          new Promise(res => inst_trim2.on("imageLoaded", res))
+        ]);
+
+				// When
+				await inst_trim0.bindTexture();
+        await inst_trim2.bindTexture();
+
+				// Then
+				const result_trim0 = await renderAndCompareSequentially(
+					inst_trim0, [[135, -45, 30, `./images/PanoViewer/test_cube_trim_0${suffix}`, threshold]]
+				);
+
+        const result_trim2 = await renderAndCompareSequentially(
+					inst_trim2, [[135, -45, 30, `./images/PanoViewer/test_cube_trim_2${suffix}`, threshold]]
+				);
+
+				expect(result_trim0.success).to.be.equal(true);
+        expect(result_trim2.success).to.be.equal(true);
+			});
+
 			// This test will fail on iOS safari, because video will not start load without use interaction.
 			IT("cubestrip 3x2: video", async () => {
 				// Given
@@ -840,7 +904,7 @@ describe("PanoImageRenderer", () => {
 			const sourceImg = new Image();
 
 			sourceImg.src = "./images/test_equi.jpg";
-			const inst = new PanoImageRendererOnIE11ForTest(sourceImg, 200, 200, false, {
+			const inst = new PanoImageRendererOnIE11ForTest(sourceImg, 200, 200, false, document.createElement("div"), DEFAULT_CANVAS_CLASS, {
 				imageType: "equirectangular",
 				fieldOfView: 65
 			});
@@ -872,7 +936,7 @@ describe("PanoImageRenderer", () => {
 			const isVideo = true;
 			const thresholdMargin = 4; /* Exceptional Case */
 
-			const inst = new PanoImageRendererOnIE11ForTest(sourceImg, 200, 200, isVideo, {
+			const inst = new PanoImageRendererOnIE11ForTest(sourceImg, 200, 200, isVideo, document.createElement("div"), DEFAULT_CANVAS_CLASS, {
 				imageType: "equirectangular",
 				fieldOfView: 65
 			});
@@ -907,7 +971,7 @@ describe("PanoImageRenderer", () => {
 			const isVideo = true;
 			const thresholdMargin = 4; /* Exceptional Case */
 
-			const inst = new PanoImageRendererOnIE11ForTest(sourceImg, 200, 200, isVideo, {
+			const inst = new PanoImageRendererOnIE11ForTest(sourceImg, 200, 200, isVideo, document.createElement("div"), DEFAULT_CANVAS_CLASS, {
 				imageType: "equirectangular",
 				fieldOfView: 65
 			});
@@ -1339,7 +1403,7 @@ describe("PanoImageRenderer", () => {
 			const sourceImg = new Image();
 
 			sourceImg.src = "./images/PanoViewer/Stereoscopic/stereoscopic1.png";
-			inst = new PanoImageRendererVR(sourceImg, 200, 200, false, {
+			inst = new PanoImageRendererVR(sourceImg, 200, 200, false, document.createElement("div"), DEFAULT_CANVAS_CLASS, {
 				fieldOfView: 65,
 				imageType: PROJECTION_TYPE.STEREOSCOPIC_EQUI,
 			});
@@ -1458,7 +1522,7 @@ describe("PanoImageRenderer", () => {
 			const sourceImg = new Image();
 
 			sourceImg.src = "./images/PanoViewer/Stereoscopic/stereoscopic1.png";
-			inst = new PanoImageRendererVRWithManagerMocked(sourceImg, 200, 200, false, {
+			inst = new PanoImageRendererVRWithManagerMocked(sourceImg, 200, 200, false, document.createElement("div"), DEFAULT_CANVAS_CLASS, {
 				fieldOfView: 65,
 				imageType: PROJECTION_TYPE.STEREOSCOPIC_EQUI,
 			});
@@ -1511,7 +1575,7 @@ describe("PanoImageRenderer", () => {
 
 		it("should apply correct yaw offset", async () => {
 			// Given
-			const renderer = new PanoImageRendererXR(sourceImg, 200, 200, false, {
+			const renderer = new PanoImageRendererXR(sourceImg, 200, 200, false, document.createElement("div"), DEFAULT_CANVAS_CLASS, {
 				fieldOfView: 65,
 				imageType: PROJECTION_TYPE.STEREOSCOPIC_EQUI,
 			});

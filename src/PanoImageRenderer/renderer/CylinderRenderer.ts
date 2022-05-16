@@ -1,6 +1,8 @@
 import { glMatrix } from "gl-matrix";
-import Renderer from "./Renderer";
+
 import WebGLUtils from "../WebGLUtils";
+
+import Renderer from "./Renderer";
 
 // const latitudeBands = 60;
 const MIN_ASPECT_RATIO_FOR_FULL_PANORAMA = 6;
@@ -59,7 +61,7 @@ void main(void) {
     const {width, height} = this.getDimension(image);
     const size = Math.max(width, height);
     const maxSize = WebGLUtils.getMaxTextureSize(gl);
-    let resizeDimension: { width: number, height: number } | undefined;
+    let resizeDimension: { width: number; height: number } | undefined;
 
     if (size > maxSize) {
       this._triggerError(`Image width(${width}) exceeds device texture limit(${maxSize}))`);
@@ -113,7 +115,7 @@ void main(void) {
       halfCylinderY = 0.5; // Range of cylinder is [-0.5, 0.5] to make height to 1.
     }
 
-    // intialize shader data before update
+    // initialize shader data before update
     textureCoordData.length = 0;
     vertexPositionData.length = 0;
     indexData.length = 0;
