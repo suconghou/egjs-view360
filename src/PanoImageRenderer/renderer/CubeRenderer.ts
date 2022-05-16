@@ -1,16 +1,18 @@
 import agent from "@egjs/agent";
-import Renderer from "./Renderer";
+
 import WebGLUtils from "../WebGLUtils";
 import { util as mathUtil } from "../../utils/math-util";
-import { CubemapConfig } from "../../types";
+import { CubemapConfig } from "../../types/internal";
+
+import Renderer from "./Renderer";
 
 class CubeRenderer extends Renderer {
-  private static _VERTEX_POSITION_DATA: number[] | null = null;
-  private static _INDEX_DATA: number[] | null = null;
-
   public static extractOrder(imageConfig: CubemapConfig) {
     return imageConfig.order || "RLUDBF";
   }
+
+  private static _VERTEX_POSITION_DATA: number[] | null = null;
+  private static _INDEX_DATA: number[] | null = null;
 
   public getVertexPositionData() {
     CubeRenderer._VERTEX_POSITION_DATA =
@@ -78,43 +80,49 @@ class CubeRenderer extends Renderer {
     return indexData;
   }
 
-  public getTextureCoordData(imageConfig: CubemapConfig) {
+  public getTextureCoordData({ image, imageConfig }: {
+    image: HTMLImageElement | HTMLVideoElement;
+    imageConfig: CubemapConfig;
+  }) {
     const vertexOrder = "BFUDRL";
     const order = CubeRenderer.extractOrder(imageConfig);
     const base = this.getVertexPositionData();
     const tileConfig = this._extractTileConfig(imageConfig);
     const elemSize = 3;
     const vertexPerTile = 4;
-    const textureCoordData =
-      vertexOrder.split("")
-        .map(face => tileConfig[order.indexOf(face)])
-        .map((config, i) => {
-          const rotation = Math.floor(config.rotation / 90);
-          const ordermap_ = config.flipHorizontal ? [0, 1, 2, 3] : [1, 0, 3, 2];
+    const { trim } = imageConfig;
 
-          for (let r = 0; r < Math.abs(rotation); r++) {
-            if ((config.flipHorizontal && rotation > 0) ||
-              (!config.flipHorizontal && rotation < 0)) {
-              ordermap_.push(ordermap_.shift()!);
-            } else {
-              ordermap_.unshift(ordermap_.pop()!);
-            }
+    const texCoords = vertexOrder.split("")
+      .map(face => tileConfig[order.indexOf(face)])
+      .map((config, i) => {
+        const rotation = Math.floor(config.rotation / 90);
+        const ordermap = config.flipHorizontal ? [0, 1, 2, 3] : [1, 0, 3, 2];
+
+        for (let r = 0; r < Math.abs(rotation); r++) {
+          if ((config.flipHorizontal && rotation > 0) ||
+            (!config.flipHorizontal && rotation < 0)) {
+            ordermap.push(ordermap.shift()!);
+          } else {
+            ordermap.unshift(ordermap.pop()!);
           }
+        }
 
-          const elemPerTile = elemSize * vertexPerTile;
-          const tileVertex = base.slice(i * elemPerTile, i * elemPerTile + elemPerTile);
-          const tileTemp: number[][] = [];
+        const elemPerTile = elemSize * vertexPerTile;
+        const tileVertex = base.slice(i * elemPerTile, i * elemPerTile + elemPerTile);
+        const tileTemp: number[][] = [];
 
-          for (let j = 0; j < vertexPerTile; j++) {
-            tileTemp[ordermap_[j]] = tileVertex.splice(0, elemSize);
-          }
-          return tileTemp;
-        })
-        .join()
-        .split(",")
-        .map(v => parseInt(v, 10));
+        for (let j = 0; j < vertexPerTile; j++) {
+          tileTemp[ordermap[j]] = tileVertex.splice(0, elemSize);
+        }
+        return tileTemp;
+      })
+      .map(coord => this._shrinkCoord({ image, faceCoords: coord, trim }))
+      .reduce((acc: number[], val: number[][]) => [
+        ...acc,
+        ...val.reduce((coords, coord) => [...coords, ...coord], [])
+      ], []);
 
-    return textureCoordData;
+    return texCoords;
   }
 
   public getVertexShaderSource() {
@@ -219,15 +227,15 @@ void main(void) {
   public getMaxCubeMapTextureSize(gl: WebGLRenderingContext, image: HTMLImageElement | HTMLVideoElement) {
     const agentInfo = agent();
     const maxCubeMapTextureSize = gl.getParameter(gl.MAX_CUBE_MAP_TEXTURE_SIZE);
-    let _imageWidth = this.getSourceTileSize(image);
+    let imageWidth = this.getSourceTileSize(image);
 
     if (agentInfo.browser.name === "ie" && agentInfo.browser.majorVersion === 11) {
-      if (!mathUtil.isPowerOfTwo(_imageWidth)) {
+      if (!mathUtil.isPowerOfTwo(imageWidth)) {
         for (let i = 1; i < maxCubeMapTextureSize; i *= 2) {
-          if (i < _imageWidth) {
+          if (i < imageWidth) {
             continue;
           } else {
-            _imageWidth = i;
+            imageWidth = i;
             break;
           }
         }
@@ -238,15 +246,39 @@ void main(void) {
 
       // ios 9 의 경우 텍스쳐 최대사이즈는 1024 이다.
       if (majorVersion === 9) {
-        _imageWidth = 1024;
+        imageWidth = 1024;
       }
       // ios 8 의 경우 텍스쳐 최대사이즈는 512 이다.
       if (majorVersion === 8) {
-        _imageWidth = 512;
+        imageWidth = 512;
       }
     }
     // maxCubeMapTextureSize 보다는 작고, imageWidth 보다 큰 2의 승수 중 가장 작은 수
-    return Math.min(maxCubeMapTextureSize, _imageWidth);
+    return Math.min(maxCubeMapTextureSize, imageWidth);
+  }
+
+  private _shrinkCoord(coordData: {
+    image: HTMLImageElement | HTMLVideoElement;
+    faceCoords: number[][];
+    trim: number;
+  }) {
+    const { image, faceCoords, trim } = coordData;
+
+    const inputTextureSize = Array.isArray(image)
+      ? this.getDimension(image[0]).width
+      : this.getSourceTileSize(image);
+
+    // Shrink by "trim" px
+    const SHRINK_MULTIPLIER = 1 - trim * (2 / inputTextureSize);
+
+    const axisMultipliers = [0, 1, 2].map(axisIndex => {
+      const axisDir = mathUtil.sign(faceCoords[0][axisIndex]);
+      const notSameDir = faceCoords.some(coord => mathUtil.sign(coord[axisIndex]) !== axisDir);
+
+      return notSameDir;
+    }).map(notSameDir => notSameDir ? SHRINK_MULTIPLIER : 1);
+
+    return faceCoords.map(coords => coords.map((coord, axisIndex) => coord * axisMultipliers[axisIndex]));
   }
 }
 

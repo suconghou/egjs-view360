@@ -1,7 +1,8 @@
 
-import Renderer from "./Renderer";
 import WebGLUtils from "../WebGLUtils";
-import { CubemapConfig, TileConfig } from "../../types";
+import { CubemapConfig, TileConfig } from "../../types/internal";
+
+import Renderer from "./Renderer";
 
 export default class CubeStripRenderer extends Renderer {
   private _vertices: number[];
@@ -144,10 +145,17 @@ void main(void) {
     return indices;
   }
 
-  public getTextureCoordData(imageConfig: CubemapConfig) {
+  public getTextureCoordData({ image, imageConfig }: {
+    image: HTMLImageElement | HTMLVideoElement;
+    imageConfig: CubemapConfig;
+  }) {
     // TODO: make it cols, rows as config.
     const cols = 3;
     const rows = 2;
+
+    const textureSize = this.getDimension(image);
+    const { trim } = imageConfig;
+
     const order = imageConfig.order || "RLUDFB";
     let coords: number[][] = [];
 
@@ -170,7 +178,7 @@ void main(void) {
     // Transform Coord By Flip & Rotation
     coords = coords
     // shrink coord to avoid pixel bleeding
-      .map(coord => this._shrinkCoord(coord))
+      .map(coord => this._shrinkCoord(coord, textureSize, trim))
       .map((coord, i) => this._transformCoord(coord, tileConfigs[i]));
 
     // vertices 에서 지정된 순서대로 그대로 그리기 위해 vertex 의 순서를 BFUDRL 로 재배치
@@ -219,9 +227,12 @@ void main(void) {
     return newCoord;
   }
 
-  private _shrinkCoord(coord: number[]) {
-    const SHRINK_Y = 0.00;
-    const SHRINK_X = 0.00;
+  private _shrinkCoord(coord: number[], textureSize: { width: number; height: number }, trim: number) {
+    const { width, height } = textureSize;
+
+    // Shrink by "trim" px
+    const SHRINK_Y = trim * (1 / height);
+    const SHRINK_X = trim * (1 / width);
 
     return [
       coord[0] + SHRINK_X, coord[1] + SHRINK_Y,
